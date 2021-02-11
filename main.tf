@@ -79,7 +79,7 @@ locals {
   cache_options = {
     "S3" = {
       type     = "S3"
-      location = module.this.enabled && local.s3_cache_enabled ? aws_s3_bucket.cache_bucket[0].bucket : "none"
+      location = (module.this.enabled && local.s3_cache_enabled) ? aws_s3_bucket.cache_bucket[0].bucket : "none"
 
     },
     "LOCAL" = {
