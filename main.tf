@@ -22,7 +22,7 @@ resource "aws_s3_bucket" "cache_bucket" {
     for_each = var.access_log_bucket_name != "" ? [1] : []
     content {
       target_bucket = var.access_log_bucket_name
-      target_prefix = "logs/${module.this.id}/"
+      target_prefix = format("logs/%s/", module.this.id)
     }
   }
 
@@ -61,7 +61,7 @@ resource "random_string" "bucket_prefix" {
 }
 
 locals {
-  cache_bucket_name = "${module.this.id}${var.cache_bucket_suffix_enabled ? "-${join("", random_string.bucket_prefix.*.result)}" : ""}"
+  cache_bucket_name = format("%s%s", module.this.id, var.cache_bucket_suffix_enabled ? random_string.bucket_prefix[0].result : "")
   s3_cache_enabled = var.cache_type == "S3"
 }
 
