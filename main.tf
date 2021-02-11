@@ -62,7 +62,10 @@ resource "random_string" "bucket_prefix" {
 
 locals {
   cache_bucket_name = "${module.this.id}${var.cache_bucket_suffix_enabled ? "-${join("", random_string.bucket_prefix.*.result)}" : ""}"
+  s3_cache_enabled = var.cache_type == "S3"
+}
 
+locals {
   ## Clean up the bucket name to use only hyphens, and trim its length to 63 characters.
   ## As per https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
   cache_bucket_name_normalised = substr(
@@ -70,8 +73,6 @@ locals {
     0,
     min(length(local.cache_bucket_name), 63),
   )
-
-  s3_cache_enabled = var.cache_type == "S3"
 
   ## This is the magic where a map of a list of maps is generated
   ## and used to conditionally add the cache bucket option to the
