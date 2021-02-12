@@ -223,6 +223,29 @@ resource "aws_codebuild_project" "default" {
     location = var.artifact_location
   }
 
+  dynamic "cache" {
+      for_each = aws_s3_bucket.cache_bucket
+      content {
+        type  = "S3"
+        location = aws_s3_bucket.value["cache_bucket"]
+      }
+  }
+
+  dynamic "cache" {
+      for_each = local.cache_type == "LOCAL" ? [""] : []
+      content {
+        type  = "LOCAL"
+        location = var.local_cache_modes
+      }
+  }
+
+  dynamic "cache" {
+      for_each = local.cache_type == "NO_CACHE" ? [""] : []
+      content {
+        type  = "NO_CACHE"
+      }
+  }
+
   cache {
     type     = local.cache.type
     location = local.s3_cache_enabled ? local.cache.location : null
