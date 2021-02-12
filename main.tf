@@ -232,7 +232,7 @@ resource "aws_codebuild_project" "default" {
   }
 
   dynamic "cache" {
-      for_each = local.cache_type == "LOCAL" ? [""] : []
+      for_each = var.cache_type == "LOCAL" ? [""] : []
       content {
         type  = "LOCAL"
         location = var.local_cache_modes
@@ -240,7 +240,7 @@ resource "aws_codebuild_project" "default" {
   }
 
   dynamic "cache" {
-      for_each = local.cache_type == "NO_CACHE" ? [""] : []
+      for_each = var.cache_type == "NO_CACHE" ? [""] : []
       content {
         type  = "NO_CACHE"
       }
