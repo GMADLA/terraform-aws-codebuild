@@ -61,7 +61,8 @@ resource "random_string" "bucket_prefix" {
 }
 
 locals {
-  cache_bucket_name = format("%s%s", module.this.id, var.cache_bucket_suffix_enabled ? random_string.bucket_prefix[0].result : "")
+  cache_bucket_name = format("%s%s", module.this.id, var.cache_bucket_suffix_enabled ?
+    format("-%s", random_string.bucket_prefix[0].result) : "")
   s3_cache_enabled = var.cache_type == "S3"
 }
 
