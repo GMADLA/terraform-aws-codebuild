@@ -227,7 +227,7 @@ resource "aws_codebuild_project" "default" {
       for_each = aws_s3_bucket.cache_bucket
       content {
         type  = "S3"
-        location = cache.value["id"]
+        location = cache.value["bucket"]
       }
   }
 
@@ -246,11 +246,11 @@ resource "aws_codebuild_project" "default" {
       }
   }
 
-  cache {
-    type     = local.cache.type
-    location = local.s3_cache_enabled ? local.cache.location : null
-    modes    = lookup(local.cache, "modes", null)
-  }
+#   cache {
+#     type     = local.cache.type
+#     location = local.s3_cache_enabled ? local.cache.location : null
+#     modes    = lookup(local.cache, "modes", null)
+#   }
 
   environment {
     compute_type    = var.build_compute_type
