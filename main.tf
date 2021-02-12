@@ -204,141 +204,151 @@ resource "aws_codebuild_source_credential" "authorization" {
   user_name   = var.source_credential_user_name
 }
 
-resource "aws_codebuild_project" "default" {
-  count          = module.this.enabled ? 1 : 0
-  name           = module.this.id
-  service_role   = join("", aws_iam_role.default.*.arn)
-  badge_enabled  = var.badge_enabled
-  build_timeout  = var.build_timeout
-  source_version = var.source_version != "" ? var.source_version : null
-  tags = {
-    for name, value in module.this.tags :
-    name => value
-    if length(value) > 0
-  }
-
-  artifacts {
-    type     = var.artifact_type
-    location = var.artifact_location
-  }
-
-  cache {
-    type     = lookup(local.cache, "type", null)
-    location = lookup(local.cache, "location", null)
-    modes    = lookup(local.cache, "modes", null)
-  }
-
-  environment {
-    compute_type    = var.build_compute_type
-    image           = var.build_image
-    type            = var.build_type
-    privileged_mode = var.privileged_mode
-
-    environment_variable {
-      name  = "AWS_REGION"
-      value = signum(length(var.aws_region)) == 1 ? var.aws_region : data.aws_region.default.name
-    }
-
-    environment_variable {
-      name  = "AWS_ACCOUNT_ID"
-      value = signum(length(var.aws_account_id)) == 1 ? var.aws_account_id : data.aws_caller_identity.default.account_id
-    }
-
-    dynamic "environment_variable" {
-      for_each = signum(length(var.image_repo_name)) == 1 ? [""] : []
-      content {
-        name  = "IMAGE_REPO_NAME"
-        value = var.image_repo_name
-      }
-    }
-
-    dynamic "environment_variable" {
-      for_each = signum(length(var.image_tag)) == 1 ? [""] : []
-      content {
-        name  = "IMAGE_TAG"
-        value = var.image_tag
-      }
-    }
-
-    dynamic "environment_variable" {
-      for_each = signum(length(module.this.stage)) == 1 ? [""] : []
-      content {
-        name  = "STAGE"
-        value = module.this.stage
-      }
-    }
-
-    dynamic "environment_variable" {
-      for_each = signum(length(var.github_token)) == 1 ? [""] : []
-      content {
-        name  = "GITHUB_TOKEN"
-        value = var.github_token
-      }
-    }
-
-    dynamic "environment_variable" {
-      for_each = var.environment_variables
-      content {
-        name  = environment_variable.value.name
-        value = environment_variable.value.value
-      }
-    }
-
-  }
-
-  source {
-    buildspec           = var.buildspec
-    type                = var.source_type
-    location            = var.source_location
-    report_build_status = var.report_build_status
-    git_clone_depth     = var.git_clone_depth != null ? var.git_clone_depth : null
-
-    dynamic "auth" {
-      for_each = var.private_repository ? [""] : []
-      content {
-        type     = "OAUTH"
-        resource = join("", aws_codebuild_source_credential.authorization.*.id)
-      }
-    }
-
-    dynamic "git_submodules_config" {
-      for_each = var.fetch_git_submodules ? [""] : []
-      content {
-        fetch_submodules = true
-      }
-    }
-  }
-
-  dynamic "vpc_config" {
-    for_each = length(var.vpc_config) > 0 ? [""] : []
-    content {
-      vpc_id             = lookup(var.vpc_config, "vpc_id", null)
-      subnets            = lookup(var.vpc_config, "subnets", null)
-      security_group_ids = lookup(var.vpc_config, "security_group_ids", null)
-    }
-  }
-
-  dynamic "logs_config" {
-    for_each = length(var.logs_config) > 0 ? [""] : []
-    content {
-      dynamic "cloudwatch_logs" {
-        for_each = contains(keys(var.logs_config), "cloudwatch_logs") ? { key = var.logs_config["cloudwatch_logs"] } : {}
-        content {
-          status      = lookup(cloudwatch_logs.value, "status", null)
-          group_name  = lookup(cloudwatch_logs.value, "group_name", null)
-          stream_name = lookup(cloudwatch_logs.value, "stream_name", null)
-        }
-      }
-
-      dynamic "s3_logs" {
-        for_each = contains(keys(var.logs_config), "s3_logs") ? { key = var.logs_config["s3_logs"] } : {}
-        content {
-          status              = lookup(s3_logs.value, "status", null)
-          location            = lookup(s3_logs.value, "location", null)
-          encryption_disabled = lookup(s3_logs.value, "encryption_disabled", null)
-        }
-      }
-    }
-  }
+output "cache_type" {
+  description = "Cache S3 bucket ARN"
+  value       = lookup(local.cache, "type", null) : "UNSET"
 }
+
+output "cache_location" {
+  description = "Cache S3 bucket ARN"
+  value       = module.this.enabled && local.s3_cache_enabled ? lookup(local.cache, "location", null) : "UNSET"
+}
+
+# resource "aws_codebuild_project" "default" {
+#   count          = module.this.enabled ? 1 : 0
+#   name           = module.this.id
+#   service_role   = join("", aws_iam_role.default.*.arn)
+#   badge_enabled  = var.badge_enabled
+#   build_timeout  = var.build_timeout
+#   source_version = var.source_version != "" ? var.source_version : null
+#   tags = {
+#     for name, value in module.this.tags :
+#     name => value
+#     if length(value) > 0
+#   }
+
+#   artifacts {
+#     type     = var.artifact_type
+#     location = var.artifact_location
+#   }
+
+#   cache {
+#     type     = lookup(local.cache, "type", null)
+#     location = lookup(local.cache, "location", null)
+#     modes    = lookup(local.cache, "modes", null)
+#   }
+
+#   environment {
+#     compute_type    = var.build_compute_type
+#     image           = var.build_image
+#     type            = var.build_type
+#     privileged_mode = var.privileged_mode
+
+#     environment_variable {
+#       name  = "AWS_REGION"
+#       value = signum(length(var.aws_region)) == 1 ? var.aws_region : data.aws_region.default.name
+#     }
+
+#     environment_variable {
+#       name  = "AWS_ACCOUNT_ID"
+#       value = signum(length(var.aws_account_id)) == 1 ? var.aws_account_id : data.aws_caller_identity.default.account_id
+#     }
+
+#     dynamic "environment_variable" {
+#       for_each = signum(length(var.image_repo_name)) == 1 ? [""] : []
+#       content {
+#         name  = "IMAGE_REPO_NAME"
+#         value = var.image_repo_name
+#       }
+#     }
+
+#     dynamic "environment_variable" {
+#       for_each = signum(length(var.image_tag)) == 1 ? [""] : []
+#       content {
+#         name  = "IMAGE_TAG"
+#         value = var.image_tag
+#       }
+#     }
+
+#     dynamic "environment_variable" {
+#       for_each = signum(length(module.this.stage)) == 1 ? [""] : []
+#       content {
+#         name  = "STAGE"
+#         value = module.this.stage
+#       }
+#     }
+
+#     dynamic "environment_variable" {
+#       for_each = signum(length(var.github_token)) == 1 ? [""] : []
+#       content {
+#         name  = "GITHUB_TOKEN"
+#         value = var.github_token
+#       }
+#     }
+
+#     dynamic "environment_variable" {
+#       for_each = var.environment_variables
+#       content {
+#         name  = environment_variable.value.name
+#         value = environment_variable.value.value
+#       }
+#     }
+
+#   }
+
+#   source {
+#     buildspec           = var.buildspec
+#     type                = var.source_type
+#     location            = var.source_location
+#     report_build_status = var.report_build_status
+#     git_clone_depth     = var.git_clone_depth != null ? var.git_clone_depth : null
+
+#     dynamic "auth" {
+#       for_each = var.private_repository ? [""] : []
+#       content {
+#         type     = "OAUTH"
+#         resource = join("", aws_codebuild_source_credential.authorization.*.id)
+#       }
+#     }
+
+#     dynamic "git_submodules_config" {
+#       for_each = var.fetch_git_submodules ? [""] : []
+#       content {
+#         fetch_submodules = true
+#       }
+#     }
+#   }
+
+#   dynamic "vpc_config" {
+#     for_each = length(var.vpc_config) > 0 ? [""] : []
+#     content {
+#       vpc_id             = lookup(var.vpc_config, "vpc_id", null)
+#       subnets            = lookup(var.vpc_config, "subnets", null)
+#       security_group_ids = lookup(var.vpc_config, "security_group_ids", null)
+#     }
+#   }
+
+#   dynamic "logs_config" {
+#     for_each = length(var.logs_config) > 0 ? [""] : []
+#     content {
+#       dynamic "cloudwatch_logs" {
+#         for_each = contains(keys(var.logs_config), "cloudwatch_logs") ? { key = var.logs_config["cloudwatch_logs"] } : {}
+#         content {
+#           status      = lookup(cloudwatch_logs.value, "status", null)
+#           group_name  = lookup(cloudwatch_logs.value, "group_name", null)
+#           stream_name = lookup(cloudwatch_logs.value, "stream_name", null)
+#         }
+#       }
+
+#       dynamic "s3_logs" {
+#         for_each = contains(keys(var.logs_config), "s3_logs") ? { key = var.logs_config["s3_logs"] } : {}
+#         content {
+#           status              = lookup(s3_logs.value, "status", null)
+#           location            = lookup(s3_logs.value, "location", null)
+#           encryption_disabled = lookup(s3_logs.value, "encryption_disabled", null)
+#         }
+#       }
+#     }
+#   }
+# }
 
