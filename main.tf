@@ -227,7 +227,7 @@ resource "aws_codebuild_project" "default" {
       for_each = aws_s3_bucket.cache_bucket
       content {
         type  = "S3"
-        location = cache.value["bucket"]
+        location = cache.value["id"]
       }
   }
 
