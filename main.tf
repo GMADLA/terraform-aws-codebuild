@@ -80,7 +80,7 @@ locals {
   cache_options = {
     "S3" = {
       type     = "S3"
-      location = (module.this.enabled && local.s3_cache_enabled) ? aws_s3_bucket.cache_bucket[0].bucket : "none"
+      location = (module.this.enabled && local.s3_cache_enabled) ? local.cache_bucket_name_normalised : "none"
 
     },
     "LOCAL" = {
@@ -206,7 +206,6 @@ resource "aws_codebuild_source_credential" "authorization" {
 
 resource "aws_codebuild_project" "default" {
   count          = module.this.enabled ? 1 : 0
-  depends_on     =  [aws_s3_bucket.cache_bucket]
   name           = module.this.id
   service_role   = join("", aws_iam_role.default.*.arn)
   badge_enabled  = var.badge_enabled
