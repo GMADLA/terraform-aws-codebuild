@@ -223,8 +223,8 @@ resource "aws_codebuild_project" "default" {
   }
 
   cache {
-    type     = lookup(local.cache, "type", null)
-    location = lookup(local.cache, "location", null)
+    type     = local.cache.type
+    location = local.s3_cache_enabled ? local.cache.location : null
     modes    = lookup(local.cache, "modes", null)
   }
 
