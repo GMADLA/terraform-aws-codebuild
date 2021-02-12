@@ -206,7 +206,7 @@ resource "aws_codebuild_source_credential" "authorization" {
 
 resource "aws_codebuild_project" "default" {
   count          = module.this.enabled ? 1 : 0
-  depends_on = [ local.s3_cache_enabled ? aws_s3_bucket.cache_bucket : "" ]
+  depends_on = local.s3_cache_enabled ? [aws_s3_bucket.cache_bucket] : []
   name           = module.this.id
   service_role   = join("", aws_iam_role.default.*.arn)
   badge_enabled  = var.badge_enabled
