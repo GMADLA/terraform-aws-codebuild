@@ -206,7 +206,7 @@ resource "aws_codebuild_source_credential" "authorization" {
 
 output "cache_type" {
   description = "Cache S3 bucket ARN"
-  value       = lookup(local.cache, "type", null) : "UNSET"
+  value       = lookup(local.cache, "type", "UNSET")
 }
 
 output "cache_location" {
