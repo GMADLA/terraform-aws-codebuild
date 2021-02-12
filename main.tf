@@ -80,7 +80,7 @@ locals {
   cache_options = {
     "S3" = {
       type     = "S3"
-      location = (module.this.enabled && local.s3_cache_enabled) ? local.cache_bucket_name_normalised : "none"
+      location = local.cache_bucket_name_normalised
 
     },
     "LOCAL" = {
